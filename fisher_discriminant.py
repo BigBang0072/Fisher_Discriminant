@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy import stats
 import matplotlib.pyplot as plt
 
 ##############################################################################
@@ -127,7 +128,7 @@ class Fisher_Discriminant():
         plt.plot(proj2D_class1[:,0],proj2D_class1[:,1],"r*",alpha=1)
         plt.plot(proj2D_class2[:,0],proj2D_class2[:,1],"g.",alpha=1)
         plt.grid()
-        plt.show()
+        # plt.show()
 
     def estimate_the_normal_dist_params(self):
         '''
@@ -192,8 +193,35 @@ class Fisher_Discriminant():
         self.decision_point=mid
         print("Decision point is: ",mid)
 
-    def plot_class_normal_distribution():
-        
+        #Plotting the decision point
+        decision_x=self.W[0,0]*mid
+        decision_y=self.W[1,0]*mid
+        plt.plot(decision_x,decision_y,"bo",alpha=1)
+
+
+    def plot_class_normal_distribution(self):
+        '''
+        Assumption: This function will work only for two dimensional data
+        Plotting the individual normal curve of each class's projected point
+        '''
+        #Getting the distribution of class1
+        points=np.linspace(-2,2,100)
+        class1_prob=stats.norm.pdf(points,self.mu1,self.sigma1).reshape(-1,1)
+        #Getting the distribution of class2
+        class2_prob=stats.norm.pdf(points,self.mu2,self.sigma2).reshape(-1,1)
+
+        #Getting the normal direction of the current vector
+        W_perp=np.array([[-self.W[1,0],],[self.W[0,0]]],dtype=np.float32)
+
+        #Now retransforming the points to 2D
+        x_pos=np.multiply(points.reshape(-1,1),self.W.T)
+        class1_pos=x_pos+np.multiply(class1_prob,W_perp.T)
+        class2_pos=x_pos+np.multiply(class2_prob,W_perp.T)
+
+        plt.plot(class1_pos[:,0],class1_pos[:,1],"r",alpha=0.6)
+        plt.plot(class2_pos[:,0],class2_pos[:,1],"g",alpha=0.6)
+
+        plt.show()
 
 if __name__=="__main__":
     datapath="dataset/ML-Assignment1-Datasets/dataset_3.csv"
@@ -205,3 +233,4 @@ if __name__=="__main__":
     fd1._plot_the_actual_points()
     fd1._plot_the_projection()
     fd1.estimate_decision_boundary()
+    fd1.plot_class_normal_distribution()
