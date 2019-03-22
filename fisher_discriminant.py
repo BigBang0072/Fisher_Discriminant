@@ -18,10 +18,23 @@ def data_handling(datapath):
 
     return df
 
+def gaussian_probability(x,mu,sigma):
+    prob=np.exp(-((x-mu)**2/(2.0*sigma**2)))/sigma
+
+    return prob
+
 class Fisher_Discriminant():
     #Attributes to the discriminant
+    #Decision boundary specific paramters
     W=None              #The intra-class variance minimizing direction
     W_mean=None         #Just the inter-class mean distance maximizing dirn
+    mu1=None            #The mean estimate of the normal distribution of class1
+    sigma1=None         #The std dev of normal dist of class1
+    mu2=None
+    sigma2=None
+    decision_point=None #The point where the two normal curve intersect
+
+    #Data specific parameters
     points_class1=None  #Points belonging to class1
     points_class2=None  #Points belonging to class2
     dataset=None
@@ -116,6 +129,72 @@ class Fisher_Discriminant():
         plt.grid()
         plt.show()
 
+    def estimate_the_normal_dist_params(self):
+        '''
+        Assumption: The task at hand is just binary classification.
+        After projecting the data, we have to get the decision boundary
+        on the one-dimensional projected real line.
+
+        Idea 1: We can do this naively by taking the mean of the mid-points
+                of the each of the projected class.
+        Idea 2: Alternatively we could fit one Normal distribution for each
+                of the class on the projected data.
+                And take the intersection point of the normal dixtribution
+                as the decision boundary.
+        '''
+        #Finding the parameters for the normal distribution of class 1
+        proj_class1=np.matmul(self.points_class1,self.W)
+        self.mu1=np.mean(proj_class1)
+        self.sigma1=np.std(proj_class1)
+        #Finding the parameters for class2's normal distribution
+        proj_class2=np.matmul(self.points_class2,self.W)
+        self.mu2=np.mean(proj_class2)
+        self.sigma2=np.std(proj_class2)
+
+    def estimate_decision_boundary(self):
+        '''
+        This function will iteratively estimate the intersection point
+        of the normal distribution of each of the class.
+        '''
+        #Estimating the normal distribution of each class projection
+        self.estimate_the_normal_dist_params()
+
+        #Initializing the low and high estimate
+        hi_mu=self.mu2
+        lo_mu=self.mu1
+        hi_sigma=self.sigma2
+        lo_sigma=self.sigma1
+        if(self.mu1>self.mu2):
+            lo_mu=self.mu2
+            lo_sigma=self.sigma2
+            hi_mu=self.mu1
+            hi_sigma=self.sigma1
+
+
+        #Now doing binary search on the intersection point
+        print("Calculating the decision point")
+        hi=hi_mu
+        lo=lo_mu
+        print("Initial estiamte of lo:{} hi:{}".format(lo,hi))
+        mid=(hi+lo)/2
+        prob1=gaussian_probability(mid,lo_mu,lo_sigma)
+        prob2=gaussian_probability(mid,hi_mu,hi_sigma)
+        while(np.abs(prob1-prob2)>1e-5):
+            if(prob1>prob2):
+                lo=mid
+            else:
+                hi=mid
+
+            mid=(lo+hi)/2
+            prob1=gaussian_probability(mid,lo_mu,lo_sigma)
+            prob2=gaussian_probability(mid,hi_mu,hi_sigma)
+
+        self.decision_point=mid
+        print("Decision point is: ",mid)
+
+    def plot_class_normal_distribution():
+        
+
 if __name__=="__main__":
     datapath="dataset/ML-Assignment1-Datasets/dataset_3.csv"
     df=data_handling(datapath)
@@ -125,3 +204,4 @@ if __name__=="__main__":
     fd1.get_fisher_discriminant_function(df)
     fd1._plot_the_actual_points()
     fd1._plot_the_projection()
+    fd1.estimate_decision_boundary()
