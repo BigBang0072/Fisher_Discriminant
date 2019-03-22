@@ -34,6 +34,8 @@ class Fisher_Discriminant():
     mu2=None
     sigma2=None
     decision_point=None #The point where the two normal curve intersect
+    greater=None        #Says which points lies ahead/greater than decision point
+    lesser=None
 
     #Data specific parameters
     points_class1=None  #Points belonging to class1
@@ -68,7 +70,8 @@ class Fisher_Discriminant():
         #Calculating the mean of each class
         m1=np.mean(self.points_class1,axis=0)
         m2=np.mean(self.points_class2,axis=0)
-        print(m1,m2)
+        print("mean class1: ",m1)
+        print("mean class2: ",m2)
         #Getting the simple projection dir which maximize the mean diff of class
         self.W_mean = (m1-m2).reshape(-1,1)
 
@@ -81,7 +84,7 @@ class Fisher_Discriminant():
         self.W = np.matmul(np.linalg.inv(Sw),self.W_mean)
         #Normalizing the projection direction
         self.W = self.W/(np.linalg.norm(self.W))
-        print("Shape of projection direction: ",self.W.shape)
+        print("\nShape of projection direction: ",self.W.shape)
         print("Projection Vector:\n ",self.W)
 
     def _calculate_covaraince_matrix(self,points,mean):
@@ -165,15 +168,19 @@ class Fisher_Discriminant():
         lo_mu=self.mu1
         hi_sigma=self.sigma2
         lo_sigma=self.sigma1
+        self.greater=1   #Describe which class in greater than threshold
+        self.lesser=0
         if(self.mu1>self.mu2):
             lo_mu=self.mu2
             lo_sigma=self.sigma2
             hi_mu=self.mu1
             hi_sigma=self.sigma1
+            self.greater=0
+            self.lesser=1
 
 
         #Now doing binary search on the intersection point
-        print("Calculating the decision point")
+        print("\nCalculating the decision point")
         hi=hi_mu
         lo=lo_mu
         print("Initial estiamte of lo:{} hi:{}".format(lo,hi))
@@ -197,7 +204,6 @@ class Fisher_Discriminant():
         decision_x=self.W[0,0]*mid
         decision_y=self.W[1,0]*mid
         plt.plot(decision_x,decision_y,"bo",alpha=1)
-
 
     def plot_class_normal_distribution(self):
         '''
@@ -223,6 +229,22 @@ class Fisher_Discriminant():
 
         plt.show()
 
+    def query_test_point(self,point):
+        '''
+        This function will classify a point as class 1 or zero based
+        on the projection threshold.
+        '''
+        #Reshaping the points in appropriate shape
+        point=point.reshape(-1,2)
+        #Projecting the point on out line
+        projection=np.matmul(point,self.W)
+        print("\nTesting on a point")
+        print("The value of projection: ",projection)
+        if(projection[0,0]>self.decision_point):
+            print("\nThe point{} belongs to:{} ".format(point,self.greater))
+        else:
+            print("\nThe point{} belongs to:{} ".format(point,self.lesser))
+
 if __name__=="__main__":
     datapath="dataset/ML-Assignment1-Datasets/dataset_3.csv"
     df=data_handling(datapath)
@@ -234,3 +256,4 @@ if __name__=="__main__":
     fd1._plot_the_projection()
     fd1.estimate_decision_boundary()
     fd1.plot_class_normal_distribution()
+    fd1.query_test_point(np.array([1,-1]))
