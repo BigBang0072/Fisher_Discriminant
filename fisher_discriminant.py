@@ -256,4 +256,4 @@ if __name__=="__main__":
     fd1._plot_the_projection()
     fd1.estimate_decision_boundary()
     fd1.plot_class_normal_distribution()
-    fd1.query_test_point(np.array([1,-1]))
+    fd1.query_test_point(np.array([1,2]))
