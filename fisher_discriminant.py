@@ -187,7 +187,7 @@ class Fisher_Discriminant():
         mid=(hi+lo)/2
         prob1=gaussian_probability(mid,lo_mu,lo_sigma)
         prob2=gaussian_probability(mid,hi_mu,hi_sigma)
-        while(np.abs(prob1-prob2)>1e-5):
+        while(np.abs(prob1-prob2)>1e-6):
             if(prob1>prob2):
                 lo=mid
             else:
@@ -240,7 +240,7 @@ class Fisher_Discriminant():
         projection=np.matmul(point,self.W)
         print("\nTesting on a point")
         print("The value of projection: ",projection)
-        if(projection[0,0]>self.decision_point):
+        if(projection[0,0] >= self.decision_point):
             print("\nThe point{} belongs to:{} ".format(point,self.greater))
         else:
             print("\nThe point{} belongs to:{} ".format(point,self.lesser))
